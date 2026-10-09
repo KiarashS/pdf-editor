@@ -120,8 +120,8 @@ extension PDFAnnotation {
             case .signature: return "Signature Field"
             case .button:
                 switch widgetControlType {
-                case .checkBox: return "Checkbox"
-                case .radioButton: return "Radio Button"
+                case .checkBoxControl: return "Checkbox"
+                case .radioButtonControl: return "Radio Button"
                 default: return "Button"
                 }
             default: return "Form Field"

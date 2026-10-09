@@ -229,7 +229,7 @@ struct AnnotationInspector: View {
                     }
                 }
             }
-            if annotation.widgetControlType == .radioButton {
+            if annotation.widgetControlType == .radioButtonControl {
                 Text("Radio buttons with the same name form a group.")
                     .font(.caption).foregroundStyle(.secondary)
             }

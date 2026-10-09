@@ -2,6 +2,7 @@ import AppKit
 import PDFEditorCore
 import PDFKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Side-by-side comparison of two PDFs with a list of text changes.
 @MainActor

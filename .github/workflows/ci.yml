@@ -18,10 +18,22 @@ jobs:
           swift --version
 
       - name: Build
-        run: swift build
+        run: |
+          set -o pipefail
+          swift build 2>&1 | tee build.log
+
+      - name: Build errors
+        if: failure()
+        run: grep -E "error:" build.log | sort -u | head -100
 
       - name: Test
-        run: swift test
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee test.log
+
+      - name: Test failures
+        if: failure()
+        run: grep -E "error:|failed|Fatal" test.log | sort -u | head -150
 
       - name: Build app bundle
         run: |

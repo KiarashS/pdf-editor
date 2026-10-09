@@ -51,12 +51,12 @@ public enum FormFields {
             annotation.widgetStringValue = ""
         case .checkbox:
             annotation.widgetFieldType = .button
-            annotation.widgetControlType = .checkBox
+            annotation.widgetControlType = .checkBoxControl
             annotation.buttonWidgetState = .offState
             annotation.buttonWidgetStateString = "Yes"
         case .radioButton:
             annotation.widgetFieldType = .button
-            annotation.widgetControlType = .radioButton
+            annotation.widgetControlType = .radioButtonControl
             annotation.buttonWidgetState = .offState
             annotation.buttonWidgetStateString = "Choice\(Int.random(in: 1000...9999))"
         case .comboBox, .listBox:
@@ -66,7 +66,7 @@ public enum FormFields {
             annotation.widgetStringValue = kind == .comboBox ? (options.first ?? "") : ""
         case .pushButton:
             annotation.widgetFieldType = .button
-            annotation.widgetControlType = .pushButton
+            annotation.widgetControlType = .pushButtonControl
             annotation.caption = "Reset"
             annotation.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.2)
             annotation.action = PDFActionResetForm()
@@ -95,7 +95,7 @@ public enum FormFields {
     public static func value(of widget: PDFAnnotation) -> String {
         switch widget.widgetFieldType {
         case .button:
-            if widget.widgetControlType == .pushButton { return "" }
+            if widget.widgetControlType == .pushButtonControl { return "" }
             return widget.buttonWidgetState == .onState ? (widget.buttonWidgetStateString.isEmpty ? "Yes" : widget.buttonWidgetStateString) : "Off"
         default:
             return widget.widgetStringValue ?? ""
@@ -107,9 +107,9 @@ public enum FormFields {
         var result: [String: String] = [:]
         for (_, widget) in widgets(in: document) {
             guard let name = widget.fieldName, !name.isEmpty else { continue }
-            if widget.widgetControlType == .pushButton { continue }
+            if widget.widgetControlType == .pushButtonControl { continue }
             let value = value(of: widget)
-            if widget.widgetControlType == .radioButton {
+            if widget.widgetControlType == .radioButtonControl {
                 if value != "Off" || result[name] == nil { result[name] = value }
             } else {
                 result[name] = value
@@ -125,9 +125,9 @@ public enum FormFields {
             switch widget.widgetFieldType {
             case .button:
                 switch widget.widgetControlType {
-                case .checkBox:
+                case .checkBoxControl:
                     widget.buttonWidgetState = (value == "Off" || value.isEmpty) ? .offState : .onState
-                case .radioButton:
+                case .radioButtonControl:
                     widget.buttonWidgetState = value == widget.buttonWidgetStateString ? .onState : .offState
                 default:
                     break
@@ -142,7 +142,7 @@ public enum FormFields {
         for (_, widget) in widgets(in: document) {
             switch widget.widgetFieldType {
             case .button:
-                if widget.widgetControlType != .pushButton { widget.buttonWidgetState = .offState }
+                if widget.widgetControlType != .pushButtonControl { widget.buttonWidgetState = .offState }
             default:
                 widget.widgetStringValue = widget.widgetDefaultStringValue ?? ""
             }

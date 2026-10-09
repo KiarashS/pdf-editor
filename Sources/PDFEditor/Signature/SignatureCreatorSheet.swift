@@ -1,6 +1,7 @@
 import AppKit
 import PDFEditorCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Creates a signature by drawing, typing or importing an image.
 @MainActor
