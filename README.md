@@ -24,7 +24,7 @@ swift test
 xcodegen generate && open PDFEditor.xcodeproj
 ```
 
-The icon is drawn by `scripts/make_icon.py` (needs Pillow), which writes `Support/AppIcon.png` and the asset catalog; the build script converts it to `AppIcon.icns` with `iconutil`.
+The icon (a black glass tile with nested silver page outlines) is drawn by `scripts/make_icon.py` (needs Pillow), which writes `Support/AppIcon.png` and the asset catalog; the build script converts it to `AppIcon.icns` with `iconutil`.
 
 `swift run PDFEditor` also launches the app, but without a bundle macOS will not register it for PDF files, so use the build script for day-to-day use.
 
