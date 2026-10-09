@@ -35,7 +35,6 @@ public enum FormFieldKind: String, CaseIterable, Identifiable {
 public enum FormFields {
     public static func make(_ kind: FormFieldKind, rect: CGRect, name: String, options: [String] = ["Option 1", "Option 2", "Option 3"]) -> PDFAnnotation {
         let annotation = PDFAnnotation(bounds: rect.standardized, forType: .widget, withProperties: nil)
-        annotation.fieldName = name
         annotation.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.08)
         annotation.font = .systemFont(ofSize: 12)
         annotation.fontColor = .black
@@ -74,6 +73,8 @@ public enum FormFields {
             annotation.widgetFieldType = .signature
             annotation.backgroundColor = NSColor.systemYellow.withAlphaComponent(0.15)
         }
+        // Set the name after the field type, which resets field properties.
+        annotation.fieldName = name
         annotation.userName = AnnotationFactory.authorName
         annotation.modificationDate = Date()
         return annotation

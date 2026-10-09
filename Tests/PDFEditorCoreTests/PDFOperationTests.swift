@@ -191,7 +191,7 @@ final class PDFOperationTests: XCTestCase {
             "\(item.annotation.type ?? "nil") field=\(item.annotation.widgetFieldType.rawValue) control=\(item.annotation.widgetControlType.rawValue) name=\(item.annotation.fieldName ?? "nil")"
         }
         XCTAssertEqual(FormFields.widgets(in: document).count, 2, "\(page.annotations.map { $0.type ?? "nil" }) \(diagnostics)")
-        XCTAssertEqual(values["Name"], "Ada")
+        XCTAssertEqual(values["Name"], "Ada", "\(values) \(diagnostics)")
         XCTAssertEqual(values["Agree"], "Yes")
         FormFields.reset(document)
         XCTAssertEqual(FormFields.values(in: document)["Agree"], "Off")
