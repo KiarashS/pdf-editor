@@ -150,7 +150,8 @@ struct StyleControls: View {
                 }
                 .labelsHidden()
                 .frame(width: 60)
-                TextField("Scale", value: $controller.measureScale, format: .number)
+                TextField("Scale", value: Binding<Double>(get: { Double(controller.measureScale) }, set: { controller.measureScale = CGFloat($0) }),
+                          format: .number)
                     .frame(width: 50)
                     .help("Drawing scale, e.g. 100 for 1:100")
             }

@@ -542,7 +542,8 @@ struct CropSheet: View {
         LabeledContent(title) {
             HStack {
                 Slider(value: value, in: 0...300)
-                TextField("", value: value, format: .number.precision(.fractionLength(0)))
+                TextField("", value: Binding<Double>(get: { Double(value.wrappedValue) }, set: { value.wrappedValue = CGFloat($0) }),
+                          format: .number.precision(.fractionLength(0)))
                     .frame(width: 56)
             }
         }
