@@ -130,7 +130,12 @@ public enum PDFConverter {
     public static func attributedText(_ document: PDFDocument, pages: IndexSet) -> NSAttributedString {
         let result = NSMutableAttributedString()
         for (ordinal, index) in pages.enumerated() {
-            guard let page = document.page(at: index), let text = page.attributedString else { continue }
+            guard let page = document.page(at: index) else { continue }
+            var text = page.attributedString ?? NSAttributedString()
+            // Some pages return an empty attributed string although they have text.
+            if text.string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let plain = page.string, !plain.isEmpty {
+                text = NSAttributedString(string: plain, attributes: [.font: NSFont.systemFont(ofSize: 12)])
+            }
             if ordinal > 0 {
                 result.append(NSAttributedString(string: "\n\u{0C}"))
             }

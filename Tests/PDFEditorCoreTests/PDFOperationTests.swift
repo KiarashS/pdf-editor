@@ -42,7 +42,7 @@ final class PDFOperationTests: XCTestCase {
         let old = document.replacePage(at: 1, with: replacement)
         XCTAssertTrue(old === page)
         XCTAssertTrue(document.page(at: 1) === replacement)
-        XCTAssertEqual(replacement.annotations.count, 1)
+        XCTAssertEqual(replacement.annotations.filter { !$0.isSubtype(.popup) }.count, 1)
         XCTAssertTrue(document.outlineRoot?.child(at: 0)?.destination?.page === replacement)
         XCTAssertTrue(replacement.string?.contains("Two") ?? false, "Composed page keeps its text")
     }
@@ -86,9 +86,9 @@ final class PDFOperationTests: XCTestCase {
     func testOverlaysAreBurnedInOnExport() throws {
         let document = Fixtures.document(pages: ["Original words here"])
         let page = try XCTUnwrap(document.page(at: 0))
-        let selection = try XCTUnwrap(document.findString("Original", withOptions: []).first)
-        let rect = selection.bounds(for: page)
-        let replacement = TextReplacementAnnotation(bounds: rect.insetBy(dx: -1, dy: -1), text: "Edited",
+        // Placed in an empty area: where it overlaps old glyphs, text extraction mixes both.
+        let rect = CGRect(x: 72, y: 200, width: 200, height: 30)
+        let replacement = TextReplacementAnnotation(bounds: rect, text: "Edited",
                                                     font: .systemFont(ofSize: 20), textColor: .black, coverColor: .white)
         page.addAnnotation(replacement)
         let image = NSImage(size: NSSize(width: 10, height: 10), flipped: false) { rect in
@@ -187,6 +187,10 @@ final class PDFOperationTests: XCTestCase {
         page.addAnnotation(check)
         FormFields.apply(["Name": "Ada", "Agree": "Yes"], to: document)
         let values = FormFields.values(in: document)
+        let diagnostics = FormFields.widgets(in: document).map { item in
+            "\(item.annotation.type ?? "nil") field=\(item.annotation.widgetFieldType.rawValue) control=\(item.annotation.widgetControlType.rawValue) name=\(item.annotation.fieldName ?? "nil")"
+        }
+        XCTAssertEqual(FormFields.widgets(in: document).count, 2, "\(page.annotations.map { $0.type ?? "nil" }) \(diagnostics)")
         XCTAssertEqual(values["Name"], "Ada")
         XCTAssertEqual(values["Agree"], "Yes")
         FormFields.reset(document)

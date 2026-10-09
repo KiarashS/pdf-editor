@@ -95,11 +95,18 @@ public enum FormFields {
     public static func value(of widget: PDFAnnotation) -> String {
         switch widget.widgetFieldType {
         case .button:
-            if widget.widgetControlType == .pushButtonControl { return "" }
+            if isPushButton(widget) { return "" }
             return widget.buttonWidgetState == .onState ? (widget.buttonWidgetStateString.isEmpty ? "Yes" : widget.buttonWidgetStateString) : "Off"
         default:
             return widget.widgetStringValue ?? ""
         }
+    }
+
+    /// Push buttons carry no value. Checked through the field type first,
+    /// because text and choice widgets report a push-button control type.
+    static func isPushButton(_ widget: PDFAnnotation) -> Bool {
+        widget.widgetFieldType == .button && widget.widgetControlType == .pushButtonControl
+            && (widget.action != nil || widget.caption != nil)
     }
 
     /// Field values keyed by field name. Radio groups report the selected option.
@@ -107,7 +114,7 @@ public enum FormFields {
         var result: [String: String] = [:]
         for (_, widget) in widgets(in: document) {
             guard let name = widget.fieldName, !name.isEmpty else { continue }
-            if widget.widgetControlType == .pushButtonControl { continue }
+            if isPushButton(widget) { continue }
             let value = value(of: widget)
             if widget.widgetControlType == .radioButtonControl {
                 if value != "Off" || result[name] == nil { result[name] = value }
@@ -130,7 +137,9 @@ public enum FormFields {
                 case .radioButtonControl:
                     widget.buttonWidgetState = value == widget.buttonWidgetStateString ? .onState : .offState
                 default:
-                    break
+                    if !isPushButton(widget) {
+                        widget.buttonWidgetState = (value == "Off" || value.isEmpty) ? .offState : .onState
+                    }
                 }
             default:
                 widget.widgetStringValue = value
@@ -142,7 +151,7 @@ public enum FormFields {
         for (_, widget) in widgets(in: document) {
             switch widget.widgetFieldType {
             case .button:
-                if widget.widgetControlType != .pushButtonControl { widget.buttonWidgetState = .offState }
+                if !isPushButton(widget) { widget.buttonWidgetState = .offState }
             default:
                 widget.widgetStringValue = widget.widgetDefaultStringValue ?? ""
             }
