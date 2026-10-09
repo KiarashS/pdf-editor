@@ -60,10 +60,15 @@ struct ToolButton: View {
 struct StyleControls: View {
     @Bindable var controller: EditorController
 
-    private func colorBinding(_ keyPath: ReferenceWritableKeyPath<EditorController, AnnotationStyle>, _ member: WritableKeyPath<AnnotationStyle, NSColor>) -> Binding<Color> {
-        Binding(
-            get: { Color(nsColor: controller[keyPath: keyPath][keyPath: member]) },
-            set: { controller[keyPath: keyPath][keyPath: member] = NSColor($0) }
+    private func colorBinding(_ member: WritableKeyPath<AnnotationStyle, NSColor>) -> Binding<Color> {
+        let controller = controller
+        return Binding(
+            get: { Color(nsColor: controller.style[keyPath: member]) },
+            set: { newValue in
+                var style = controller.style
+                style[keyPath: member] = NSColor(newValue)
+                controller.style = style
+            }
         )
     }
 
@@ -71,7 +76,7 @@ struct StyleControls: View {
         let tool = controller.tool
         HStack(spacing: 8) {
             if tool.usesHighlightColor || tool == .highlighterPen {
-                ColorPicker("Color", selection: colorBinding(\.style, \.highlightColor), supportsOpacity: false)
+                ColorPicker("Color", selection: colorBinding(\.highlightColor), supportsOpacity: false)
                     .labelsHidden()
                     .help("Highlight color")
                 ForEach([NSColor.systemYellow, .systemGreen, .systemPink, .systemBlue, .systemOrange], id: \.self) { color in
@@ -85,7 +90,7 @@ struct StyleControls: View {
                 }
             }
             if tool.usesStroke && tool != .highlighterPen {
-                ColorPicker("Stroke", selection: colorBinding(\.style, \.strokeColor), supportsOpacity: false)
+                ColorPicker("Stroke", selection: colorBinding(\.strokeColor), supportsOpacity: false)
                     .labelsHidden()
                     .help("Stroke color")
                 HStack(spacing: 2) {
@@ -126,7 +131,7 @@ struct StyleControls: View {
                 Stepper(value: $controller.style.fontSize, in: 6...96, step: 1) {
                     Text("\(Int(controller.style.fontSize)) pt").monospacedDigit()
                 }
-                ColorPicker("Text", selection: colorBinding(\.style, \.textColor), supportsOpacity: false)
+                ColorPicker("Text", selection: colorBinding(\.textColor), supportsOpacity: false)
                     .labelsHidden()
                     .help("Text color")
             }
