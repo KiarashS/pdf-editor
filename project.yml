@@ -1,0 +1,56 @@
+# XcodeGen spec: run `xcodegen generate` to create PDFEditor.xcodeproj.
+# The Xcode build is sandboxed (see Support/PDFEditor.entitlements);
+# the SwiftPM build in scripts/build-app.sh is not.
+name: PDFEditor
+options:
+  bundleIdPrefix: com.pdfeditor
+  deploymentTarget:
+    macOS: "14.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  PDFEditorCore:
+    type: framework
+    platform: macOS
+    sources:
+      - Sources/PDFEditorCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.pdfeditor.core
+  PDFEditor:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/PDFEditor
+    dependencies:
+      - target: PDFEditorCore
+    settings:
+      base:
+        PRODUCT_NAME: PDFEditor
+        PRODUCT_BUNDLE_IDENTIFIER: com.pdfeditor.app
+        INFOPLIST_FILE: Support/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Support/PDFEditor.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+  PDFEditorCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/PDFEditorCoreTests
+    dependencies:
+      - target: PDFEditorCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  PDFEditor:
+    build:
+      targets:
+        PDFEditor: all
+    test:
+      targets:
+        - PDFEditorCoreTests
