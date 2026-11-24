@@ -116,7 +116,7 @@ struct PageOrganizerView: View {
 
 /// A page being dragged inside the organizer, carried as tagged text.
 struct PageDragItem: Transferable {
-    static let prefix = "pdfeditor-page:"
+    static let prefix = "kpdf-page:"
     let index: Int
 
     static var transferRepresentation: some TransferRepresentation {

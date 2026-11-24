@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds "PDF Editor.app" from the Swift package and ad-hoc signs it.
+# Builds "KPDF.app" from the Swift package and ad-hoc signs it.
 # Usage: scripts/build-app.sh [release|debug]
 # Optional environment: VERSION (e.g. 1.0.42) and BUILD_NUMBER (e.g. 42).
 set -euo pipefail
@@ -7,13 +7,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 CONFIG="${1:-release}"
 
-swift build -c "$CONFIG" --product PDFEditor
+swift build -c "$CONFIG" --product KPDF
 BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
 
-APP="build/PDF Editor.app"
+APP="build/KPDF.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN_DIR/PDFEditor" "$APP/Contents/MacOS/PDFEditor"
+cp "$BIN_DIR/KPDF" "$APP/Contents/MacOS/KPDF"
 cp Support/Info.plist "$APP/Contents/Info.plist"
 
 # App icon: iconutil turns the asset catalog PNGs into an .icns file.

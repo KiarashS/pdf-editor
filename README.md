@@ -1,32 +1,32 @@
-# PDF Editor
+# KPDF
 
 A native macOS PDF editor written in Swift with SwiftUI and PDFKit. The feature set follows UPDF: reading, annotating, editing, page organization, forms, OCR, conversion, redaction, protection, batch processing, comparison and an AI assistant (Claude).
 
-Requires macOS 14 Sonoma or later. Building needs Xcode 16 or later.
+Requires macOS 15 Sequoia or later; the Liquid Glass interface appears on macOS 26 Tahoe. Building needs Xcode 16 or later, and Xcode 26 for Liquid Glass.
 
 ## Download
 
-Every push to `main` builds the app, runs the tests and publishes a disk image on the [Releases](https://github.com/KiarashS/pdf-editor/releases) page, versioned `1.0.<build number>`. Open the .dmg and drag PDF Editor to Applications. The build is ad-hoc signed and not notarized, so the first time you open it, right-click the app and choose Open (or run `xattr -dr com.apple.quarantine "/Applications/PDF Editor.app"`).
+Every push to `main` builds the app, runs the tests and publishes a disk image on the [Releases](https://github.com/KiarashS/pdf-editor/releases) page, versioned `1.0.<build number>`. Open the .dmg and drag KPDF to Applications. The build is ad-hoc signed and not notarized, so the first time you open it, right-click the app and choose Open (or run `xattr -dr com.apple.quarantine "/Applications/KPDF.app"`).
 
 ## Building
 
 ```sh
-# Command line: builds "build/PDF Editor.app" (ad-hoc signed, not sandboxed)
+# Command line: builds "build/KPDF.app" (ad-hoc signed, not sandboxed)
 scripts/build-app.sh
 
-# Disk image with an Applications shortcut: build/PDF-Editor-<version>.dmg
+# Disk image with an Applications shortcut: build/KPDF-<version>.dmg
 scripts/make-dmg.sh
 
 # Run the unit tests for the core library
 swift test
 
 # Xcode project with App Sandbox and entitlements (needs XcodeGen: brew install xcodegen)
-xcodegen generate && open PDFEditor.xcodeproj
+xcodegen generate && open KPDF.xcodeproj
 ```
 
 The icon (a black glass tile with nested silver page outlines) is drawn by `scripts/make_icon.py` (needs Pillow), which writes `Support/AppIcon.png` and the asset catalog; the build script converts it to `AppIcon.icns` with `iconutil`.
 
-`swift run PDFEditor` also launches the app, but without a bundle macOS will not register it for PDF files, so use the build script for day-to-day use.
+`swift run KPDF` also launches the app, but without a bundle macOS will not register it for PDF files, so use the build script for day-to-day use.
 
 ## Features
 
@@ -95,7 +95,7 @@ Images placed with Add Image and image signatures work the same way: they are mo
 Sources/PDFEditorCore   PDF logic with no UI: page compositing, decorations, redaction,
                         OCR, conversion (including minimal XLSX/PPTX writers), forms,
                         diff, batch processing, Claude client
-Sources/PDFEditor       SwiftUI app: document type, EditorController (all edits, with undo),
+Sources/PDFEditor       SwiftUI app (the KPDF target): document type, EditorController (all edits, with undo),
                         PDFView subclass and tool overlay, sidebars, inspector, sheets
 Tests/PDFEditorCoreTests  XCTest suite for the core library
 Support/                Info.plist, sandbox entitlements, app icon and asset catalog

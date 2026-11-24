@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "PDFEditor",
+    name: "KPDF",
     defaultLocalization: "en",
     platforms: [.macOS(.v15)],
     products: [
-        .executable(name: "PDFEditor", targets: ["PDFEditor"]),
+        .executable(name: "KPDF", targets: ["KPDF"]),
         .library(name: "PDFEditorCore", targets: ["PDFEditorCore"]),
     ],
     targets: [
@@ -15,7 +15,7 @@ let package = Package(
             path: "Sources/PDFEditorCore"
         ),
         .executableTarget(
-            name: "PDFEditor",
+            name: "KPDF",
             dependencies: ["PDFEditorCore"],
             path: "Sources/PDFEditor"
         ),

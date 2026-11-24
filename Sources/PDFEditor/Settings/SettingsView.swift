@@ -10,11 +10,22 @@ enum SettingsKeys {
 
 /// Stores the Anthropic API key in the login keychain.
 enum APIKeyStore {
-    private static let service = "PDFEditor.AnthropicAPIKey"
+    private static let service = "KPDF.AnthropicAPIKey"
+    /// Where keys were stored before the app was renamed to KPDF.
+    private static let legacyService = "PDFEditor.AnthropicAPIKey"
     private static let account = "default"
 
     /// The saved key, or `ANTHROPIC_API_KEY` from the environment.
     static func load() -> String? {
+        if let key = load(service: service) { return key }
+        if let key = load(service: legacyService) {
+            save(key)
+            return key
+        }
+        return ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"]
+    }
+
+    private static func load(service: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -27,7 +38,7 @@ enum APIKeyStore {
            let data = item as? Data, let key = String(data: data, encoding: .utf8), !key.isEmpty {
             return key
         }
-        return ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"]
+        return nil
     }
 
     @discardableResult

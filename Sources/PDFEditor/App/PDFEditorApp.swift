@@ -5,7 +5,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 @main
-struct PDFEditorApp: App {
+struct KPDFApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
@@ -47,6 +47,7 @@ enum WindowID {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     override init() {
+        LegacyDataMigration.run()
         UserDefaults.standard.register(defaults: [
             "NSShowAppCentricOpenPanelInsteadOfUntitledFile": false,
             SettingsKeysExtra.openInTabs: true,
@@ -274,5 +275,28 @@ struct EditorCommands: Commands {
             Button("Batch Processing…") { openWindow(id: WindowID.batch) }
             Button("Compare Documents…") { openWindow(id: WindowID.compare) }
         }
+    }
+}
+
+/// Carries settings and the data folder over from builds named "PDF Editor"
+/// (bundle ID com.pdfeditor.app, folder Application Support/PDFEditor).
+enum LegacyDataMigration {
+    private static let doneKey = "migration.fromPDFEditor"
+
+    static func run() {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: doneKey) else { return }
+        for domain in ["com.pdfeditor.app", "PDFEditor"] {
+            for (key, value) in defaults.persistentDomain(forName: domain) ?? [:] where defaults.object(forKey: key) == nil {
+                defaults.set(value, forKey: key)
+            }
+        }
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let old = support.appendingPathComponent("PDFEditor", isDirectory: true)
+        let new = support.appendingPathComponent("KPDF", isDirectory: true)
+        if FileManager.default.fileExists(atPath: old.path), !FileManager.default.fileExists(atPath: new.path) {
+            try? FileManager.default.moveItem(at: old, to: new)
+        }
+        defaults.set(true, forKey: doneKey)
     }
 }

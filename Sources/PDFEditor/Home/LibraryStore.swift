@@ -31,7 +31,7 @@ final class LibraryStore {
 
     init() {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("PDFEditor", isDirectory: true)
+            .appendingPathComponent("KPDF", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         fileURL = directory.appendingPathComponent("library.json")
         if let data = try? Data(contentsOf: fileURL),

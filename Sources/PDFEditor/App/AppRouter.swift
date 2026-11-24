@@ -17,7 +17,7 @@ enum PendingDocumentAction {
 @MainActor
 final class AppRouter {
     static let shared = AppRouter()
-    static let tabbingIdentifier = "PDFEditor.Main"
+    static let tabbingIdentifier = "KPDF.Main"
 
     var openWindow: OpenWindowAction?
     weak var homeWindow: NSWindow?

@@ -1,9 +1,9 @@
-# XcodeGen spec: run `xcodegen generate` to create PDFEditor.xcodeproj.
-# The Xcode build is sandboxed (see Support/PDFEditor.entitlements);
+# XcodeGen spec: run `xcodegen generate` to create KPDF.xcodeproj.
+# The Xcode build is sandboxed (see Support/KPDF.entitlements);
 # the SwiftPM build in scripts/build-app.sh is not.
-name: PDFEditor
+name: KPDF
 options:
-  bundleIdPrefix: com.pdfeditor
+  bundleIdPrefix: com.kpdf
   deploymentTarget:
     macOS: "15.0"
 settings:
@@ -20,8 +20,8 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.pdfeditor.core
-  PDFEditor:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kpdf.core
+  KPDF:
     type: application
     platform: macOS
     sources:
@@ -31,10 +31,10 @@ targets:
       - target: PDFEditorCore
     settings:
       base:
-        PRODUCT_NAME: PDFEditor
-        PRODUCT_BUNDLE_IDENTIFIER: com.pdfeditor.app
+        PRODUCT_NAME: KPDF
+        PRODUCT_BUNDLE_IDENTIFIER: com.kpdf.app
         INFOPLIST_FILE: Support/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Support/PDFEditor.entitlements
+        CODE_SIGN_ENTITLEMENTS: Support/KPDF.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
@@ -49,10 +49,10 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
 schemes:
-  PDFEditor:
+  KPDF:
     build:
       targets:
-        PDFEditor: all
+        KPDF: all
     test:
       targets:
         - PDFEditorCoreTests

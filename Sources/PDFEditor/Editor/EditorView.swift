@@ -91,7 +91,7 @@ struct EditorView: View {
         .sheet(item: $controller.sheet) { sheet in
             SheetHost(controller: controller, sheet: sheet)
         }
-        .alert("PDF Editor", isPresented: Binding(
+        .alert("KPDF", isPresented: Binding(
             get: { controller.alertMessage != nil },
             set: { if !$0 { controller.alertMessage = nil } }
         )) {
