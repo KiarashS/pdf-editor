@@ -56,15 +56,9 @@ struct HomeView: View {
             dock
                 .padding(.bottom, 22)
         }
-        .frame(minWidth: 900, minHeight: 600)
-        .tint(Brand.accent)
-        .background(WindowReader { window in AppRouter.shared.adoptWindow(window, isHome: true) })
-        .onAppear {
-            AppRouter.shared.openWindow = openWindow
-            library.mergeSystemRecents()
-        }
+        .onAppear { library.mergeSystemRecents() }
         .dropDestination(for: URL.self) { urls, _ in
-            urls.filter { $0.pathExtension.lowercased() == "pdf" }.forEach { AppRouter.shared.openDocument(at: $0) }
+            urls.filter { $0.pathExtension.lowercased() == "pdf" }.forEach { Workspace.shared.open($0) }
             return true
         } isTargeted: { dropTargeted = $0 }
         .overlay {
@@ -105,7 +99,7 @@ struct HomeView: View {
             }
             Spacer()
             Button {
-                NSDocumentController.shared.openDocument(nil)
+                Workspace.shared.presentOpenPanel()
             } label: {
                 Label("Open File", systemImage: "plus.circle.fill")
                     .font(.system(size: 15, weight: .semibold))
@@ -235,7 +229,7 @@ struct HomeView: View {
             Text(section == .recent ? "Open a PDF or drop one here." : "Star a file from its card to keep it here.")
                 .foregroundStyle(.secondary)
             if section == .recent {
-                Button("Open File…") { NSDocumentController.shared.openDocument(nil) }
+                Button("Open File…") { Workspace.shared.presentOpenPanel() }
                     .glassButtonStyle(prominent: true)
                     .tint(Brand.accent)
             }

@@ -28,6 +28,10 @@ The icon (a black glass tile with nested silver page outlines) is drawn by `scri
 
 `swift run KPDF` also launches the app, but without a bundle macOS will not register it for PDF files, so use the build script for day-to-day use.
 
+## Window and tabs
+
+KPDF opens to Home, not an Open panel. PDFs open as tabs in the title bar next to the Home button, from Home, File > Open (⌘O), the + button, Finder or a drop onto the window. A dot on a tab means unsaved changes; closing the tab or quitting asks whether to save. ⌘S saves, ⇧⌘S saves a copy elsewhere, ⌘W closes the tab, ⌃⇥ and ⌃⇧⇥ switch tabs, and ⇧⌘H returns to Home.
+
 ## Features
 
 ### Reading
@@ -103,7 +107,7 @@ scripts/                App bundle, disk image and icon scripts
 project.yml             XcodeGen spec
 ```
 
-`EditorController` performs every change and registers an undo action for it, which is also how SwiftUI's `DocumentGroup` learns that the document has unsaved changes. Operations that rewrite pages (watermarks, OCR, redaction, flattening) build a new page with `CGContext.drawPDFPage`, which keeps the original text and vector content, move the annotations across, and repoint bookmarks and links at the new page.
+KPDF runs in one main window, like UPDF: a tab strip in the title bar holds Home and the open PDFs, and the app manages opening, saving and closing itself (`Workspace`), so there is no Open panel at launch. Each tab is an `EditorController`, which performs every change and registers an undo action for it in the tab's own undo manager; counting those registrations is how a tab knows it has unsaved changes. Operations that rewrite pages (watermarks, OCR, redaction, flattening) build a new page with `CGContext.drawPDFPage`, which keeps the original text and vector content, move the annotations across, and repoint bookmarks and links at the new page.
 
 ## Not supported
 

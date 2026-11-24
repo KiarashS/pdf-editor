@@ -2,78 +2,43 @@ import AppKit
 import PDFEditorCore
 import SwiftUI
 
-enum SettingsKeysExtra {
-    static let openInTabs = "window.openDocumentsInTabs"
-}
-
-/// Something to do once a document window has opened, e.g. after the user
+/// Something to do once a document tab has opened, e.g. after the user
 /// picked a file from Home's AI or Tools buttons.
 enum PendingDocumentAction {
     case showAssistant
     case tool(QuickTool)
 }
 
-/// App-wide navigation: Home, opening documents and window tabs.
+/// App-wide navigation: the main window, Home and opening documents.
 @MainActor
 final class AppRouter {
     static let shared = AppRouter()
-    static let tabbingIdentifier = "KPDF.Main"
 
     var openWindow: OpenWindowAction?
-    weak var homeWindow: NSWindow?
-    private var pending: [String: PendingDocumentAction] = [:]
+    weak var mainWindow: NSWindow?
+
+    /// Brings the main window forward, reopening it if it was closed.
+    func showMainWindow() {
+        if let mainWindow, mainWindow.isVisible || mainWindow.isMiniaturized {
+            mainWindow.deminiaturize(nil)
+            mainWindow.makeKeyAndOrderFront(nil)
+        } else {
+            openWindow?(id: WindowID.main)
+        }
+        NSApp.activate()
+    }
 
     func showHome() {
-        if let homeWindow, homeWindow.isVisible || homeWindow.isMiniaturized {
-            homeWindow.deminiaturize(nil)
-            homeWindow.makeKeyAndOrderFront(nil)
-        } else if let openWindow {
-            openWindow(id: WindowID.home)
-        } else {
-            NSDocumentController.shared.openDocument(nil)
-        }
+        Workspace.shared.showHome()
+        showMainWindow()
     }
 
     func openDocument(at url: URL, then action: PendingDocumentAction? = nil) {
-        if let action { pending[url.standardizedFileURL.path] = action }
-        NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, error in
-            guard let error else { return }
-            Task { @MainActor in NSAlert(error: error).runModal() }
-        }
+        Workspace.shared.open(url, then: action)
     }
 
-    /// Lets the user pick a PDF, opens it and then performs `action`.
     func chooseAndOpen(message: String, then action: PendingDocumentAction?) {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.pdf]
-        panel.message = message
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        openDocument(at: url, then: action)
-    }
-
-    func takePendingAction(for url: URL?) -> PendingDocumentAction? {
-        guard let url else { return nil }
-        return pending.removeValue(forKey: url.standardizedFileURL.path)
-    }
-
-    /// Joins `window` to the main tab group, so documents open as tabs next to Home.
-    func adoptWindow(_ window: NSWindow, isHome: Bool) {
-        window.tabbingIdentifier = Self.tabbingIdentifier
-        window.tabbingMode = .preferred
-        if isHome {
-            homeWindow = window
-            window.title = "Home"
-        }
-        let inTabs = UserDefaults.standard.object(forKey: SettingsKeysExtra.openInTabs) as? Bool ?? true
-        guard inTabs, window.tabbedWindows?.count ?? 1 <= 1 else { return }
-        let candidates = [NSApp.keyWindow, NSApp.mainWindow, homeWindow] + NSApp.windows.map { Optional($0) }
-        guard let host = candidates.compactMap({ $0 }).first(where: { other in
-            other !== window && other.isVisible && other.tabbingIdentifier == Self.tabbingIdentifier
-                && !(other.tabbedWindows?.contains(window) ?? false)
-                && !(other is NSPanel)
-        }) else { return }
-        host.addTabbedWindow(window, ordered: .above)
-        window.makeKeyAndOrderFront(nil)
+        Workspace.shared.chooseAndOpen(message: message, then: action)
     }
 }
 

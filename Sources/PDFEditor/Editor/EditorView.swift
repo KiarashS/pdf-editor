@@ -3,47 +3,6 @@ import PDFEditorCore
 import PDFKit
 import SwiftUI
 
-/// Root view of a document window; creates the controller once.
-struct ContentView: View {
-    @ObservedObject var document: PDFFileDocument
-    let fileURL: URL?
-    @Environment(\.undoManager) private var undoManager
-    @Environment(\.openWindow) private var openWindow
-    @State private var controller: EditorController?
-
-    var body: some View {
-        Group {
-            if let controller {
-                EditorView(controller: controller)
-            } else {
-                Color.clear
-            }
-        }
-        .frame(minWidth: 960, minHeight: 640)
-        .background(WindowReader { window in AppRouter.shared.adoptWindow(window, isHome: false) })
-        .tint(Brand.accent)
-        .onAppear {
-            AppRouter.shared.openWindow = openWindow
-            if controller == nil {
-                let editor = EditorController(fileDocument: document, fileURL: fileURL)
-                controller = editor
-                if let fileURL { LibraryStore.shared.noteOpened(fileURL, pageCount: editor.pageCount) }
-                if let action = AppRouter.shared.takePendingAction(for: fileURL) {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        MainActor.assumeIsolated { editor.perform(action) }
-                    }
-                }
-            }
-            controller?.undoManager = undoManager
-        }
-        .onChange(of: undoManager) { _, newValue in controller?.undoManager = newValue }
-        .onChange(of: fileURL) { _, newValue in
-            controller?.fileURL = newValue
-            if let newValue, let controller { LibraryStore.shared.noteOpened(newValue, pageCount: controller.pageCount) }
-        }
-    }
-}
-
 /// The document window: icon rail, sidebar panel, and the page canvas with
 /// floating glass toolbars over it.
 @MainActor
@@ -86,8 +45,6 @@ struct EditorView: View {
             InspectorView(controller: controller)
                 .inspectorColumnWidth(min: 270, ideal: 310, max: 440)
         }
-        .navigationTitle(controller.documentTitle)
-        .toolbar { toolbarContent }
         .sheet(item: $controller.sheet) { sheet in
             SheetHost(controller: controller, sheet: sheet)
         }
@@ -105,46 +62,6 @@ struct EditorView: View {
             }
         }
         .focusedSceneValue(\.editorController, controller)
-    }
-
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            Button {
-                AppRouter.shared.showHome()
-            } label: {
-                Label("Home", systemImage: "house")
-            }
-            .help("Home")
-        }
-
-        ToolbarItemGroup(placement: .primaryAction) {
-            Button {
-                controller.share()
-            } label: {
-                Label("Share", systemImage: "square.and.arrow.up")
-            }
-            .help("Share")
-
-            Button {
-                if controller.showsInspector && controller.inspectorTab == .assistant {
-                    controller.showsInspector = false
-                } else {
-                    controller.inspectorTab = .assistant
-                    controller.showsInspector = true
-                }
-            } label: {
-                Label("AI Assistant", systemImage: "sparkles")
-            }
-            .help("Ask Claude about this document")
-
-            Button {
-                controller.showsInspector.toggle()
-            } label: {
-                Label("Inspector", systemImage: "sidebar.right")
-            }
-            .help("Show or hide the inspector")
-        }
     }
 }
 
@@ -226,9 +143,9 @@ struct FloatingTopBar: View {
                 .help(undo?.redoMenuItemTitle ?? "Redo")
             Divider().frame(height: 18).padding(.horizontal, 2)
             CapsuleBarButton(title: nil, systemImage: "square.and.arrow.down") {
-                NSApp.sendAction(#selector(NSDocument.save(_:)), to: nil, from: nil)
+                Workspace.shared.save(controller)
             }
-            .help("Save")
+            .help(controller.isEdited ? "Save (⌘S), unsaved changes" : "Save (⌘S)")
             CapsuleBarButton(title: nil, systemImage: "printer") { controller.printDocument() }
                 .help("Print")
         }

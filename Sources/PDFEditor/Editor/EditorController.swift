@@ -64,8 +64,14 @@ final class EditorController {
     /// AI chat for this document; kept here so it survives inspector tab changes.
     @ObservationIgnored let assistant = AssistantModel()
 
+    nonisolated let id = UUID()
     var document: PDFDocument { fileDocument.pdf }
     var fileURL: URL?
+    /// Name shown for a document that has not been saved yet.
+    var untitledName = "Untitled"
+    /// Edits since opening; compared with `savedChangeCount` to show unsaved changes.
+    var changeCount = 0
+    var savedChangeCount = 0
 
     // View state
     var mode: EditorMode = .read {
@@ -147,7 +153,7 @@ final class EditorController {
 
     var documentTitle: String {
         if let title = document.documentAttributes?[PDFDocumentAttribute.titleAttribute] as? String, !title.isEmpty { return title }
-        return fileURL?.deletingPathExtension().lastPathComponent ?? "Untitled"
+        return fileURL?.deletingPathExtension().lastPathComponent ?? untitledName
     }
 
     var currentPage: PDFPage? { document.page(at: currentPageIndex) }
@@ -161,8 +167,11 @@ final class EditorController {
         view.apply(theme: readingTheme)
         canvasGeneration += 1
         updateCanvasInsets()
-        // Resume where the reader left off.
-        if let fileURL, let page = LibraryStore.shared.lastPage(of: fileURL), page > 0, page < pageCount {
+        // Resume where the reader left off: in this session (switching tabs)
+        // or from the last time the file was open.
+        if currentPageIndex > 0, currentPageIndex < pageCount {
+            go(toPage: currentPageIndex)
+        } else if let fileURL, let page = LibraryStore.shared.lastPage(of: fileURL), page > 0, page < pageCount {
             go(toPage: page)
         }
     }
@@ -207,6 +216,12 @@ final class EditorController {
 
     /// Registers `undo` and marks the document as edited.
     func registerUndo(_ name: String, _ undo: @escaping (EditorController) -> Void) {
+        // Undoing moves back toward the saved state; doing and redoing move away.
+        if undoManager?.isUndoing == true {
+            changeCount -= 1
+        } else {
+            changeCount += 1
+        }
         if let undoManager {
             undoManager.registerUndo(withTarget: self) { target in
                 MainActor.assumeIsolated { undo(target) }

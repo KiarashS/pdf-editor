@@ -24,6 +24,18 @@ final class PDFFileDocument: ReferenceFileDocument {
         originalData = nil
     }
 
+    /// A document opened from bytes on disk.
+    convenience init?(data: Data) {
+        guard let document = PDFDocument(data: data) else { return nil }
+        self.init(pdf: document, data: data)
+    }
+
+    /// Wraps an in-memory PDF; `data` is the original file content, if any.
+    init(pdf: PDFDocument, data: Data?) {
+        self.pdf = pdf
+        originalData = data
+    }
+
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents,
               let document = PDFDocument(data: data) else {

@@ -9,16 +9,14 @@ struct KPDFApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        Window("Home", id: WindowID.home) {
-            HomeView()
+        // One main window, like UPDF: Home and the open PDFs as tabs.
+        Window("KPDF", id: WindowID.main) {
+            WorkspaceView()
         }
-        .defaultSize(width: 1240, height: 820)
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 1280, height: 840)
         .defaultLaunchBehavior(.presented)
         .commands { EditorCommands() }
-
-        DocumentGroup(newDocument: { PDFFileDocument() }) { file in
-            ContentView(document: file.document, fileURL: file.fileURL)
-        }
 
         Window("Batch Processing", id: WindowID.batch) {
             BatchView()
@@ -37,26 +35,27 @@ struct KPDFApp: App {
 }
 
 enum WindowID {
-    static let home = "home"
+    static let main = "main"
     static let batch = "batch"
     static let compare = "compare"
 }
 
-/// Shows Home instead of an Open panel at launch, and when the Dock icon is
-/// clicked with no windows open.
+/// Opens files from Finder into tabs, reopens the main window from the Dock,
+/// and asks about unsaved changes before quitting.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     override init() {
         LegacyDataMigration.run()
-        UserDefaults.standard.register(defaults: [
-            "NSShowAppCentricOpenPanelInsteadOfUntitledFile": false,
-            SettingsKeysExtra.openInTabs: true,
-        ])
         super.init()
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        NSWindow.allowsAutomaticWindowTabbing = true
+        // Tabs are drawn by KPDF itself.
+        NSWindow.allowsAutomaticWindowTabbing = false
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls { Workspace.shared.open(url) }
     }
 
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
@@ -64,8 +63,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if !flag { AppRouter.shared.showHome() }
+        if !flag { AppRouter.shared.showMainWindow() }
         return false
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        Workspace.shared.confirmCloseAll() ? .terminateNow : .terminateCancel
     }
 }
 
@@ -137,23 +140,9 @@ enum DocumentCreator {
         saveAndOpen(document, suggestedName: "Untitled")
     }
 
+    /// Opens the new PDF as an unsaved tab; ⌘S asks where to save it.
     static func saveAndOpen(_ document: PDFDocument, suggestedName: String) {
-        guard document.pageCount > 0 else {
-            NSSound.beep()
-            return
-        }
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.pdf]
-        panel.nameFieldStringValue = suggestedName + ".pdf"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        guard document.write(to: url) else {
-            NSAlert(error: ExportError.serializationFailed).runModal()
-            return
-        }
-        NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, error in
-            guard let error else { return }
-            Task { @MainActor in NSAlert(error: error).runModal() }
-        }
+        Workspace.shared.openUntitled(document, name: suggestedName)
     }
 }
 
@@ -162,9 +151,9 @@ struct EditorCommands: Commands {
     @Environment(\.openWindow) private var openWindow
 
     var body: some Commands {
-        CommandGroup(after: .newItem) {
-            Button("Home") { AppRouter.shared.showHome() }
-                .keyboardShortcut("h", modifiers: [.command, .shift])
+        CommandGroup(replacing: .newItem) {
+            Button("New Blank PDF") { DocumentCreator.newBlank(size: .letter) }
+                .keyboardShortcut("n")
             Menu("New From") {
                 Button("Images…") { DocumentCreator.newFromImages() }
                 Button("Clipboard") { DocumentCreator.newFromClipboard() }
@@ -175,6 +164,40 @@ struct EditorCommands: Commands {
                 }
             }
             Button("Combine Files…") { DocumentCreator.combineFiles() }
+            Divider()
+            Button("Open…") { Workspace.shared.presentOpenPanel() }
+                .keyboardShortcut("o")
+            OpenRecentMenu()
+            Divider()
+            Button("Home") { AppRouter.shared.showHome() }
+                .keyboardShortcut("h", modifiers: [.command, .shift])
+        }
+
+        CommandGroup(replacing: .saveItem) {
+            Button("Close Tab") { Workspace.shared.closeFromMenu() }
+                .keyboardShortcut("w")
+            Divider()
+            Button("Save") { controller.map { Workspace.shared.save($0) } }
+                .keyboardShortcut("s")
+                .disabled(controller == nil)
+            Button("Save As…") { controller.map { Workspace.shared.saveAs($0) } }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
+                .disabled(controller == nil)
+        }
+
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo") { Workspace.shared.undo() }
+                .keyboardShortcut("z")
+            Button("Redo") { Workspace.shared.redo() }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+        }
+
+        CommandGroup(before: .windowList) {
+            Button("Show Next Tab") { Workspace.shared.selectNext() }
+                .keyboardShortcut(.tab, modifiers: [.control])
+            Button("Show Previous Tab") { Workspace.shared.selectPrevious() }
+                .keyboardShortcut(.tab, modifiers: [.control, .shift])
+            Divider()
         }
 
         CommandGroup(replacing: .printItem) {
@@ -298,5 +321,23 @@ enum LegacyDataMigration {
             try? FileManager.default.moveItem(at: old, to: new)
         }
         defaults.set(true, forKey: doneKey)
+    }
+}
+
+/// File > Open Recent, from the Home library.
+@MainActor
+struct OpenRecentMenu: View {
+    @State private var library = LibraryStore.shared
+
+    var body: some View {
+        Menu("Open Recent") {
+            ForEach(library.recents.prefix(15)) { item in
+                Button(item.title) { library.open(item) }
+            }
+            if !library.recents.isEmpty {
+                Divider()
+                Button("Clear Menu") { library.clearRecents() }
+            }
+        }
     }
 }
