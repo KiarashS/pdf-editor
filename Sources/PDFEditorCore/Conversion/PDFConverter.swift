@@ -367,10 +367,11 @@ public enum TableExtractor {
             }
             averageWidth += rect.width
             widthSamples += 1
+            // Characters between whitespace form a word unless they jump to another line.
             if var word = current,
                abs(rect.midY - word.rect.midY) < max(rect.height, word.rect.height) * 0.5,
-               rect.minX - word.rect.maxX < rect.width * 0.6,
-               rect.minX >= word.rect.minX {
+               rect.minX >= word.rect.minX - 1,
+               rect.minX - word.rect.maxX < max(rect.width, word.rect.width / CGFloat(max(word.text.count, 1))) * 3 {
                 word.text += character
                 word.rect = word.rect.union(rect)
                 current = word

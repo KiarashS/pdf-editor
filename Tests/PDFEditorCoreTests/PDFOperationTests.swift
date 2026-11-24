@@ -257,9 +257,9 @@ final class ConversionTests: XCTestCase {
     func testTableExtractionFindsColumns() throws {
         let document = Fixtures.document(pages: ["Name          Qty\nApple          3\nPear          5"], fontSize: 14)
         let rows = TableExtractor.rows(on: document.page(at: 0))
-        XCTAssertEqual(rows.count, 3)
-        XCTAssertEqual(rows.first?.first, "Name")
-        XCTAssertEqual(rows.last?.last, "5")
+        XCTAssertEqual(rows.count, 3, "\(rows)")
+        XCTAssertEqual(rows.first?.first, "Name", "\(rows)")
+        XCTAssertEqual(rows.last?.last, "5", "\(rows)")
     }
 
     func testImagesToPDF() throws {
