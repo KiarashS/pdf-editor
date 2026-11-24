@@ -223,7 +223,15 @@ struct HeaderFooterSheet: View {
             }
         }
         .frame(minHeight: 620)
-        .onAppear { range = controller.defaultRangeChoice }
+        .onAppear {
+            range = controller.defaultRangeChoice
+            if controller.batesPreset {
+                options.footerCenter = ""
+                options.footerRight = "{bates}"
+                if options.batesPrefix.isEmpty { options.batesPrefix = "DOC" }
+                controller.batesPreset = false
+            }
+        }
     }
 
     private func apply() {
@@ -426,7 +434,13 @@ struct ConvertSheet: View {
                 PageRangePicker(choice: $range, custom: $custom, pageCount: controller.pageCount, hasSelection: controller.organizerSelection.count > 1)
             }
         }
-        .onAppear { range = controller.defaultRangeChoice }
+        .onAppear {
+            range = controller.defaultRangeChoice
+            if let preset = controller.convertPreset {
+                format = preset
+                controller.convertPreset = nil
+            }
+        }
     }
 
     private var note: String {

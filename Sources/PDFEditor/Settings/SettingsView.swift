@@ -59,6 +59,7 @@ struct SettingsView: View {
 
 struct GeneralSettings: View {
     @AppStorage(SettingsKeys.authorName) private var authorName = NSFullUserName()
+    @AppStorage(SettingsKeysExtra.openInTabs) private var openInTabs = true
 
     var body: some View {
         Form {
@@ -67,6 +68,8 @@ struct GeneralSettings: View {
             Text("New highlights, notes and drawings are signed with this name.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Toggle("Open documents as tabs in one window", isOn: $openInTabs)
+                .padding(.top, 8)
         }
         .padding(20)
     }

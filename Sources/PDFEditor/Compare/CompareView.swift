@@ -51,6 +51,13 @@ struct CompareView: View {
             }
         }
         .onChange(of: selected) { reveal(selected) }
+        .onAppear {
+            if let url = CompareRequest.original {
+                oldURL = url
+                oldDocument = PDFDocument(url: url)
+                CompareRequest.original = nil
+            }
+        }
     }
 
     private func fileButton(title: String, url: URL?, onPick: @escaping (URL) -> Void) -> some View {

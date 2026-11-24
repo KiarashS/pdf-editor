@@ -41,7 +41,11 @@ final class EditorPDFView: PDFView {
         displayMode = .singlePageContinuous
         displaysPageBreaks = true
         pageShadowsEnabled = true
-        backgroundColor = .underPageBackgroundColor
+        backgroundColor = NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                ? NSColor(calibratedWhite: 0.13, alpha: 1)
+                : NSColor(calibratedRed: 0.93, green: 0.93, blue: 0.95, alpha: 1)
+        }
         overlay.pdfView = self
         overlay.frame = bounds
         overlay.autoresizingMask = [.width, .height]
@@ -69,7 +73,25 @@ final class EditorPDFView: PDFView {
 
     private var observedClipView: NSClipView?
 
+    private var desiredInsets = NSEdgeInsets(top: 64, left: 0, bottom: 60, right: 0)
+
+    /// Lets pages scroll underneath the floating toolbars.
+    func setContentInsets(top: CGFloat, bottom: CGFloat) {
+        desiredInsets = NSEdgeInsets(top: top, left: 0, bottom: bottom, right: 0)
+        applyInsets()
+    }
+
+    private func applyInsets() {
+        guard let scrollView = documentView?.enclosingScrollView else { return }
+        scrollView.automaticallyAdjustsContentInsets = false
+        let current = scrollView.contentInsets
+        if current.top != desiredInsets.top || current.bottom != desiredInsets.bottom {
+            scrollView.contentInsets = desiredInsets
+        }
+    }
+
     private func observeScrolling() {
+        applyInsets()
         guard let clip = documentView?.enclosingScrollView?.contentView, clip !== observedClipView else { return }
         observedClipView = clip
         clip.postsBoundsChangedNotifications = true

@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PDFEditor",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "PDFEditor", targets: ["PDFEditor"]),
         .library(name: "PDFEditorCore", targets: ["PDFEditorCore"]),

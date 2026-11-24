@@ -74,6 +74,7 @@ final class EditorController {
             tool = mode.tools.first ?? .select
             selectedAnnotation = nil
             if mode == .pages { organizerSelection = [currentPageIndex] }
+            updateCanvasInsets()
         }
     }
     var tool: Tool = .select {
@@ -90,6 +91,12 @@ final class EditorController {
         }
     }
     var showsInspector = false
+    var sidebarVisible = true
+    var showsToolsPanel = false
+    /// Format preselected when the Convert sheet opens from a converter shortcut.
+    var convertPreset: ConversionFormat?
+    /// Opens the Header & Footer sheet with a Bates number already filled in.
+    var batesPreset = false
     var inspectorTab: InspectorTab = .properties
     var sidebarTab: SidebarTab = .thumbnails
     var sheet: EditorSheet?
@@ -153,13 +160,27 @@ final class EditorController {
         view.displaysAsBook = displaysAsBook
         view.apply(theme: readingTheme)
         canvasGeneration += 1
+        updateCanvasInsets()
+        // Resume where the reader left off.
+        if let fileURL, let page = LibraryStore.shared.lastPage(of: fileURL), page > 0, page < pageCount {
+            go(toPage: page)
+        }
+    }
+
+    /// Room for the floating glass bars above and below the pages.
+    func updateCanvasInsets() {
+        let top: CGFloat = mode.tools.isEmpty ? 64 : 112
+        pdfView?.setContentInsets(top: top, bottom: 60)
     }
 
     /// Called by the canvas when the visible page or zoom changes.
     func canvasDidScroll() {
         guard let view = pdfView, let page = view.currentPage else { return }
         let index = document.index(for: page)
-        if index != NSNotFound, index != currentPageIndex { currentPageIndex = index }
+        if index != NSNotFound, index != currentPageIndex {
+            currentPageIndex = index
+            if let fileURL { LibraryStore.shared.recordPosition(of: fileURL, page: index, pageCount: pageCount) }
+        }
         let percent = Int((view.scaleFactor * 100).rounded())
         if percent != zoomPercent { zoomPercent = percent }
     }

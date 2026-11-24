@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build-and-test:
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       VERSION: 1.0.${{ github.run_number }}
       BUILD_NUMBER: ${{ github.run_number }}
@@ -73,7 +73,7 @@ jobs:
             echo "## Installing"
             echo "Open the .dmg and drag PDF Editor to Applications. The app is ad-hoc signed, not notarized:"
             echo "the first time, right-click it and choose Open, or run \`xattr -dr com.apple.quarantine \"/Applications/PDF Editor.app\"\`."
-            echo "Requires macOS 14 or later."
+            echo "Requires macOS 15 or later. Liquid Glass styling needs macOS 26."
           } > release-notes.md
           gh release create "$TAG" "build/PDF-Editor-$VERSION.dmg" \
             --target "$GITHUB_SHA" \

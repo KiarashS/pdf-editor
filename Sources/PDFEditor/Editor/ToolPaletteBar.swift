@@ -9,27 +9,31 @@ struct ToolPaletteBar: View {
     @Bindable var controller: EditorController
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 4) {
-                ForEach(controller.mode.tools) { tool in
-                    ToolButton(tool: tool, isSelected: controller.tool == tool) {
-                        controller.tool = tool
-                        if tool == .addImage { controller.pendingImage = controller.chooseImage() }
-                        if tool == .signature, controller.signatureStore.signatures.isEmpty { controller.sheet = .newSignature }
-                    }
-                }
-                if !controller.mode.tools.isEmpty {
-                    Divider().frame(height: 22).padding(.horizontal, 6)
-                }
-                StyleControls(controller: controller)
-                Spacer(minLength: 16)
-                ModeActions(controller: controller)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+        // Hug the content when it fits; scroll horizontally in narrow windows.
+        ViewThatFits(in: .horizontal) {
+            content
+            ScrollView(.horizontal, showsIndicators: false) { content }
         }
-        .background(.bar)
+        .glassSurface(Capsule(), interactive: true)
         .controlSize(.small)
+    }
+
+    private var content: some View {
+        HStack(spacing: 3) {
+            ForEach(controller.mode.tools) { tool in
+                ToolButton(tool: tool, isSelected: controller.tool == tool) {
+                    controller.tool = tool
+                    if tool == .addImage { controller.pendingImage = controller.chooseImage() }
+                    if tool == .signature, controller.signatureStore.signatures.isEmpty { controller.sheet = .newSignature }
+                }
+            }
+            Divider().frame(height: 20).padding(.horizontal, 6)
+            StyleControls(controller: controller)
+            Divider().frame(height: 20).padding(.horizontal, 6)
+            ModeActions(controller: controller)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
     }
 }
 
@@ -41,14 +45,14 @@ struct ToolButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: tool.systemImage)
-                .frame(width: 26, height: 22)
+                .font(.system(size: 13, weight: .medium))
+                .frame(width: 30, height: 26)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isSelected ? Color.white : Color.primary)
+        .foregroundStyle(isSelected ? Brand.accent : Color.primary)
         .background(
-            RoundedRectangle(cornerRadius: 5)
-                .fill(isSelected ? Color.accentColor : Color.clear)
+            Capsule().fill(isSelected ? Brand.accentSoft : Color.clear)
         )
         .help(tool.title)
         .accessibilityLabel(tool.title)

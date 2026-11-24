@@ -6,11 +6,19 @@ import UniformTypeIdentifiers
 
 @main
 struct PDFEditorApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     var body: some Scene {
+        Window("Home", id: WindowID.home) {
+            HomeView()
+        }
+        .defaultSize(width: 1240, height: 820)
+        .defaultLaunchBehavior(.presented)
+        .commands { EditorCommands() }
+
         DocumentGroup(newDocument: { PDFFileDocument() }) { file in
             ContentView(document: file.document, fileURL: file.fileURL)
         }
-        .commands { EditorCommands() }
 
         Window("Batch Processing", id: WindowID.batch) {
             BatchView()
@@ -29,8 +37,35 @@ struct PDFEditorApp: App {
 }
 
 enum WindowID {
+    static let home = "home"
     static let batch = "batch"
     static let compare = "compare"
+}
+
+/// Shows Home instead of an Open panel at launch, and when the Dock icon is
+/// clicked with no windows open.
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    override init() {
+        UserDefaults.standard.register(defaults: [
+            "NSShowAppCentricOpenPanelInsteadOfUntitledFile": false,
+            SettingsKeysExtra.openInTabs: true,
+        ])
+        super.init()
+    }
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSWindow.allowsAutomaticWindowTabbing = true
+    }
+
+    func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag { AppRouter.shared.showHome() }
+        return false
+    }
 }
 
 struct EditorControllerKey: FocusedValueKey {
@@ -127,6 +162,8 @@ struct EditorCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .newItem) {
+            Button("Home") { AppRouter.shared.showHome() }
+                .keyboardShortcut("h", modifiers: [.command, .shift])
             Menu("New From") {
                 Button("Images…") { DocumentCreator.newFromImages() }
                 Button("Clipboard") { DocumentCreator.newFromClipboard() }
@@ -146,7 +183,10 @@ struct EditorCommands: Commands {
         }
 
         CommandGroup(after: .saveItem) {
-            Button("Export…") { controller?.sheet = .convert }
+            Button("Export…") {
+                controller?.convertPreset = nil
+                controller?.sheet = .convert
+            }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
                 .disabled(controller == nil)
             Button("Save Flattened Copy…") { controller?.saveFlattenedCopy() }

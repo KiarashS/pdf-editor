@@ -31,8 +31,6 @@ struct PageOrganizerView: View {
         let _ = controller.revision
         let pages = controller.document.pages
         VStack(spacing: 0) {
-            OrganizerToolbar(controller: controller)
-            Divider()
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: controller.organizerThumbnailSize + 20), spacing: 18)], spacing: 22) {
                     ForEach(Array(pages.enumerated()), id: \.element) { index, page in
@@ -54,9 +52,11 @@ struct PageOrganizerView: View {
                             }
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, 24)
+                .padding(.top, 116)
+                .padding(.bottom, 80)
             }
-            .background(Color(nsColor: .underPageBackgroundColor))
+            .background(Brand.canvas)
             .dropDestination(for: URL.self) { urls, _ in
                 controller.insertFiles(urls, at: controller.pageCount)
                 return true
@@ -147,7 +147,7 @@ struct PageCell: View {
                 .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)
-                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 3)
+                        .stroke(isSelected ? Brand.accent : Color.clear, lineWidth: 3)
                         .padding(-4)
                 )
                 .overlay(alignment: .leading) {
@@ -198,16 +198,17 @@ struct OrganizerToolbar: View {
             Button("Crop", systemImage: "crop") { controller.sheet = .crop }
             Button("Delete", systemImage: "trash", role: .destructive) { controller.deletePages(targets) }
                 .disabled(!hasSelection)
-            Spacer()
+            Divider().frame(height: 18)
             Button("Select All") { controller.organizerSelection = Set(0..<controller.pageCount) }
             Slider(value: $controller.organizerThumbnailSize, in: 90...320)
                 .frame(width: 110)
                 .help("Thumbnail size")
         }
         .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
         .controlSize(.regular)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .glassSurface(Capsule(), interactive: true)
     }
 }
