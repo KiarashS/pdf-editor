@@ -348,8 +348,8 @@ public enum TableExtractor {
     /// and aligned to column anchors shared across the page.
     public static func rows(on page: PDFPage?) -> [[String]] {
         guard let page, let string = page.string, !string.isEmpty else { return [] }
-        // Read characters through selections: page.string can be offset from
-        // the index space characterBounds(at:) uses (line breaks differ).
+        // page.string, characterBounds(at:) and selections can disagree about
+        // indexes around line breaks, so read everything through selections.
         let count = page.numberOfCharacters
 
         // Group characters into words.
@@ -358,8 +358,10 @@ public enum TableExtractor {
         var averageWidth: CGFloat = 0
         var widthSamples: CGFloat = 0
         for i in 0..<count {
-            let character = page.selection(for: NSRange(location: i, length: 1))?.string ?? " "
-            let rect = page.characterBounds(at: i)
+            // Character and bounds come from the same selection, so they always agree.
+            let selection = page.selection(for: NSRange(location: i, length: 1))
+            let character = selection?.string ?? " "
+            let rect = selection?.bounds(for: page) ?? .zero
             let isSpace = character.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             if isSpace || rect.isEmpty {
                 if let word = current { words.append(word) }
